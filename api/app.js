@@ -25,6 +25,7 @@ app.get("/service-providers", (req, res) => {
     }
   });
 });
+// create  - post router for service providers, get route for indivial/single providers, put route for service providers. 
 
 // CRUD OPERATIONS- CREATE, READ, UPDATE, DELETE
 app.get("/users", (req, res) => {
@@ -59,6 +60,35 @@ app.post("/users", (req, res) => {
     }
   });
 });
+
+app.get("/users/:id", (req, res) => {
+  // :id is a query parameter - dynamic value
+  dbconn.query(
+    `SELECT * FROM users WHERE id = ${req.params.id}`,
+    (err, result) => {
+      if (err) {
+        res.status(500).json({ success: false, error: "Server Error" });
+      } else {
+        res.json(result);
+      }
+    },
+  );
+});
+app.put("/users/:id", (req, res) => {
+  // :id is a query parameter - dynamic value
+  const { email, phone, first_name, last_name, user_type } = req.body;
+  const updateStatement = `UPDATE users SET email = "${email}", phone= "${phone}", first_name = "${first_name}", last_name = "${last_name}", user_type="${user_type}" WHERE id = ${req.params.id} `;
+
+  dbconn.query(updateStatement, (err) => {
+    if (err) {
+      res.json({ success: false, error: err });
+    } else {
+      res.json({ success: true, message: "User info updated!" });
+    }
+  });
+});
+
+app.delete("/users/:id", (req, res) => {});
 
 app.get("/clients", (req, res) => {
   dbconn.query("SELECT * FROM clients", (err, results) => {

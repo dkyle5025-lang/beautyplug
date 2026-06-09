@@ -1,25 +1,25 @@
 import "./App.css";
-import Hero from "./Hero.jsx";
-import Service from "./Service.jsx";
+import { Routes, Route, Link } from "react-router-dom";
+import Home from "./pages/Home.jsx";
+import About from "./pages/About.jsx";
+import Contact from "./pages/Contact.jsx";
+import Login from "./pages/Login.jsx";
 
 function App() {
-  const services = [
-    { title: "manicure", desc: "best manicure in town" },
-    { title: "pedicure", desc: "best pedicure in town" },
-    { title: "facial", desc: "best facial in town" },
-    { title: "salon", desc: "best salon in town" },
-    { title: "makeup", desc: "best makeup in town" },
-    { title: "haircut", desc: "best haircut in town" },
-  ];
   return (
     <div className="App">
-      <h1>Frontend Web </h1>
-      <Hero />
-      <ul>
-        {services.map((service, index) => (
-          <Service key={index} title={service.title} desc={service.desc} />
-        ))}
-      </ul>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/about">About</Link>
+        <Link to="/contact">Contact</Link>
+        <Link to="/login">Login</Link>
+      </nav>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
     </div>
   );
 }

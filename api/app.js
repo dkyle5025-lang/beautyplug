@@ -1,5 +1,6 @@
 const express = require("express");
 const mysql = require("mysql2");
+const cors = require("cors");
 
 const app = express();
 const dbconn = mysql.createConnection({
@@ -9,6 +10,7 @@ const dbconn = mysql.createConnection({
   database: "beautyplug",
   port: 3306,
 });
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Middleware to parse JSON bodies - postman, API clients- fetch, axios, etc.
 app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies -  browser form submissions
 

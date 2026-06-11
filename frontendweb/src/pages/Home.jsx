@@ -1,7 +1,7 @@
 import Hero from "../Hero.jsx";
 import Service from "../Service.jsx";
-import ServiceProvider from "../ServiceProvider.jsx"; 
-import {useEffect, useState} from "react";
+import ServiceProvider from "../ServiceProvider.jsx";
+import { useEffect, useState } from "react";
 
 function Home() {
   // http://localhost:3000/service-providers
@@ -11,15 +11,14 @@ function Home() {
     fetch("http://localhost:3000/service-providers")
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
-        setServiceProviders(data);
+        setServiceProviders(data); // set providers to the list in the db
       })
       .catch((error) => {
         console.error("Error fetching service providers:", error);
       });
   }, []);
 
-    const services = [
+  const services = [
     { title: "manicure", desc: "best manicure in town" },
     { title: "pedicure", desc: "best pedicure in town" },
     { title: "facial", desc: "best facial in town" },
@@ -34,14 +33,13 @@ function Home() {
       <h2>Our Services</h2>
       <ul>
         {services.map((service, index) => (
-          <Service key={index} title={service.title} desc={service.desc} /> 
+          <Service key={index} title={service.title} desc={service.desc} />
         ))}
-      </ul> 
-      <h2> Service Providers  </h2>
-      {/* each service provider - business_name, bio , primary_category, home_location_address" */}
-      {
+      </ul>
+      <h2> Service Providers </h2>
+      {serviceProviders.length > 0 ? (
         serviceProviders.map((provider, index) => (
-          <ServiceProvider 
+          <ServiceProvider
             key={index}
             businessName={provider.business_name}
             bio={provider.bio}
@@ -49,7 +47,10 @@ function Home() {
             location={provider.home_location_address}
           />
         ))
-      }    </div>
+      ) : (
+        <p>No Service Providers Found</p>
+      )}
+    </div>
   );
 }
 

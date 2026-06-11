@@ -6,6 +6,7 @@ function Users() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:3000/users")

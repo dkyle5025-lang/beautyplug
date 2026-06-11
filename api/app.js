@@ -48,6 +48,7 @@ app.post("/users", (req, res) => {
   const { email, phone, first_name, last_name, password_hash, user_type } =
     req.body;
   // input validation can be added here -- avoid attacks like SQL injection, XSS, etc.
+  
   const query = `INSERT INTO users (email, phone, first_name, last_name, password_hash, user_type) VALUES ( '${email}' , '${phone}' , '${first_name}' , '${last_name}' , '${password_hash}' , '${user_type}' )`;
 
   dbconn.query(query, (err, results) => {

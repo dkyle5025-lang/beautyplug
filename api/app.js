@@ -47,48 +47,74 @@ app.get("/users", (req, res) => {
 app.post("/users", (req, res) => {
   const { email, phone, first_name, last_name, password_hash, user_type } =
     req.body;
-  // input validation can be added here -- avoid attacks like SQL injection, XSS, etc.
-  
-  const query = `INSERT INTO users (email, phone, first_name, last_name, password_hash, user_type) VALUES ( '${email}' , '${phone}' , '${first_name}' , '${last_name}' , '${password_hash}' , '${user_type}' )`;
 
-  dbconn.query(query, (err, results) => {
-    if (err) {
-      console.error("Error creating user:", err);
-      res.status(500).json({ error: "Internal Server Error" });
-    } else {
-      res.status(201).json({
-        message: "User created successfully",
-        userId: results.insertId,
-      });
-    }
-  });
+  const query =
+    "INSERT INTO users (email, phone, first_name, last_name, password_hash, user_type) VALUES (?, ?, ?, ?, ?, ?)";
+
+  dbconn.query(
+    query,
+    [email, phone, first_name, last_name, password_hash, user_type],
+    (err, results) => {
+      if (err) {
+        console.error("Error creating user:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+      } else {
+        dbconn.query(
+          "SELECT * FROM users WHERE id = ?",
+          [results.insertId],
+          (selectErr, users) => {
+            if (selectErr) {
+              console.error("Error loading created user:", selectErr);
+              res.status(500).json({ error: "Internal Server Error" });
+            } else {
+              res.status(201).json(users[0]);
+            }
+          },
+        );
+      }
+    },
+  );
 });
 
 app.get("/users/:id", (req, res) => {
-  // :id is a query parameter - dynamic value
   dbconn.query(
-    `SELECT * FROM users WHERE id = ${req.params.id}`,
+    "SELECT * FROM users WHERE id = ?",
+    [req.params.id],
     (err, result) => {
       if (err) {
         res.status(500).json({ success: false, error: "Server Error" });
       } else {
-        res.json(result);
+        res.json(result[0] ?? null);
       }
     },
   );
 });
 app.put("/users/:id", (req, res) => {
-  // :id is a query parameter - dynamic value
   const { email, phone, first_name, last_name, user_type } = req.body;
-  const updateStatement = `UPDATE users SET email = "${email}", phone= "${phone}", first_name = "${first_name}", last_name = "${last_name}", user_type="${user_type}" WHERE id = ${req.params.id} `;
+  const updateStatement =
+    "UPDATE users SET email = ?, phone = ?, first_name = ?, last_name = ?, user_type = ? WHERE id = ?";
 
-  dbconn.query(updateStatement, (err) => {
-    if (err) {
-      res.json({ success: false, error: err });
-    } else {
-      res.json({ success: true, message: "User info updated!" });
-    }
-  });
+  dbconn.query(
+    updateStatement,
+    [email, phone, first_name, last_name, user_type, req.params.id],
+    (err) => {
+      if (err) {
+        res.status(500).json({ success: false, error: err });
+      } else {
+        dbconn.query(
+          "SELECT * FROM users WHERE id = ?",
+          [req.params.id],
+          (selectErr, users) => {
+            if (selectErr) {
+              res.status(500).json({ success: false, error: selectErr });
+            } else {
+              res.json({ success: true, user: users[0] ?? null });
+            }
+          },
+        );
+      }
+    },
+  );
 });
 
 app.delete("/users/:id", (req, res) => {});

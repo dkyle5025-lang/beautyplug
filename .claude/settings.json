@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd \"c:\\\\Users\\\\USER\\\\Desktop\\\\2026 Classes\\\\beautyplug\\\\api\"; $p = Start-Process -FilePath node -ArgumentList \"app.js\" -PassThru -RedirectStandardOutput out.log -RedirectStandardError err.log -NoNewWindow; Start-Sleep -Seconds 2; if \\(-not $p.HasExited\\) { \"Server booted \\(pid $\\($p.Id\\)\\)\"; Stop-Process -Id $p.Id -Force } else { \"Exited early\" }; \"--- stdout ---\"; Get-Content out.log -ErrorAction SilentlyContinue; \"--- stderr ---\"; Get-Content err.log -ErrorAction SilentlyContinue; Remove-Item out.log,err.log -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

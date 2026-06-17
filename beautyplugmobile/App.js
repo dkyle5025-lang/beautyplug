@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#e9ecef",
     backgroundColor: "#fff",
+    marginBottom: 50,
   },
   tabItem: {
     flex: 1,

@@ -78,7 +78,8 @@ npm run dev      # node --watch app.js (auto-restart on change)
 node app.js
 ```
 
-Server starts at `http://localhost:3000`.
+Server starts at `http://localhost:3000`. In production it is hosted at
+`https://beautyapi.kipchirchir.co.ke`.
 
 > **Production note:** the session `secret` is hard-coded for development. Move
 > it to an environment variable and set `cookie.secure = true` behind HTTPS.
@@ -118,7 +119,7 @@ The `user_type` enum drives authorization via two guards in `app.js`:
 
 ## Conventions
 
-- **Base URL:** `http://localhost:3000`
+- **Base URL:** `https://beautyapi.kipchirchir.co.ke` (production). Local dev: `https://beautyapi.kipchirchir.co.ke`.
 - **Content-Type:** `application/json` for all bodies.
 - **IDs:** integer, auto-increment.
 - **Timestamps:** MySQL `TIMESTAMP`, returned as ISO-ish strings.
@@ -169,7 +170,7 @@ in on success.
 **Request:**
 
 ```bash
-curl -c cookies.txt -X POST http://localhost:3000/auth/register \
+curl -c cookies.txt -X POST https://beautyapi.kipchirchir.co.ke/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "jane@example.com",
@@ -209,7 +210,7 @@ curl -c cookies.txt -X POST http://localhost:3000/auth/register \
 **Body:** `{ "email": string, "password": string }`
 
 ```bash
-curl -c cookies.txt -X POST http://localhost:3000/auth/login \
+curl -c cookies.txt -X POST https://beautyapi.kipchirchir.co.ke/auth/login \
   -H "Content-Type: application/json" \
   -d '{ "email": "jane@example.com", "password": "secret123" }'
 ```
@@ -288,7 +289,7 @@ List providers, excluding soft-deleted ones. **Auth:** none (public catalog).
 **Query filters:** `category` (primary_category), `approval_status`.
 
 ```bash
-curl "http://localhost:3000/service-providers?category=barber&approval_status=approved"
+curl "https://beautyapi.kipchirchir.co.ke/service-providers?category=barber&approval_status=approved"
 ```
 
 ```json
@@ -473,7 +474,7 @@ from the chosen service so they cannot be tampered with by the client.
 **Request:**
 
 ```bash
-curl -b cookies.txt -X POST http://localhost:3000/bookings \
+curl -b cookies.txt -X POST https://beautyapi.kipchirchir.co.ke/bookings \
   -H "Content-Type: application/json" \
   -d '{
     "client_id": 1,
@@ -576,7 +577,7 @@ List a provider's availability slots, ordered by date/time. **Auth:** none.
 **Query:** `provider_id` (**required**), `only_available` (`1`/`true`).
 
 ```bash
-curl "http://localhost:3000/availability?provider_id=1&only_available=1"
+curl "https://beautyapi.kipchirchir.co.ke/availability?provider_id=1&only_available=1"
 ```
 
 `400` if `provider_id` is omitted.

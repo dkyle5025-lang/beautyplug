@@ -5,6 +5,12 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 
 const app = express();
+
+// Hosted behind an nginx reverse proxy. Trust the first proxy hop so that
+// req.protocol / req.ip reflect the original client (via X-Forwarded-* headers)
+// and "secure" session cookies are honored over the proxied HTTPS connection.
+app.set("trust proxy", 1);
+
 const dbconn = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -15,6 +21,9 @@ const dbconn = mysql.createConnection({
 
 // ---------------------------------------------------------------------------
 // Middleware
+
+
+
 // ---------------------------------------------------------------------------
 
 // CORS must allow credentials so the session cookie is sent/received by browser
@@ -121,7 +130,14 @@ app.post("/auth/register", (req, res) => {
     primary_category, // required when user_type === 'provider'
   } = req.body;
 
-  if (!email || !phone || !first_name || !last_name || !password || !user_type) {
+  if (
+    !email ||
+    !phone ||
+    !first_name ||
+    !last_name ||
+    !password ||
+    !user_type
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
   if (!["client", "provider", "admin"].includes(user_type)) {
@@ -215,32 +231,28 @@ app.post("/auth/login", (req, res) => {
     return res.status(400).json({ error: "email and password are required" });
   }
 
-  dbconn.query(
-    "SELECT * FROM users WHERE email = ?",
-    [email],
-    (err, users) => {
-      if (err) {
-        console.error("Error during login:", err);
+  dbconn.query("SELECT * FROM users WHERE email = ?", [email], (err, users) => {
+    if (err) {
+      console.error("Error during login:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+    if (users.length === 0) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const user = users[0];
+    bcrypt.compare(password, user.password_hash, (cmpErr, match) => {
+      if (cmpErr) {
+        console.error("Error comparing password:", cmpErr);
         return res.status(500).json({ error: "Internal Server Error" });
       }
-      if (users.length === 0) {
+      if (!match) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-
-      const user = users[0];
-      bcrypt.compare(password, user.password_hash, (cmpErr, match) => {
-        if (cmpErr) {
-          console.error("Error comparing password:", cmpErr);
-          return res.status(500).json({ error: "Internal Server Error" });
-        }
-        if (!match) {
-          return res.status(401).json({ error: "Invalid credentials" });
-        }
-        req.session.user = publicUser(user);
-        res.json({ user: req.session.user });
-      });
-    },
-  );
+      req.session.user = publicUser(user);
+      res.json({ user: req.session.user });
+    });
+  });
 });
 
 // Destroy the current session.
@@ -464,7 +476,8 @@ app.put("/service-providers/:id", requireAuth, (req, res) => {
         console.error("Error loading provider:", err);
         return res.status(500).json({ error: "Internal Server Error" });
       }
-      if (!rows[0]) return res.status(404).json({ error: "Provider not found" });
+      if (!rows[0])
+        return res.status(404).json({ error: "Provider not found" });
 
       const provider = rows[0];
       const u = req.session.user;
@@ -520,24 +533,21 @@ app.put("/service-providers/:id", requireAuth, (req, res) => {
 });
 
 // Update a provider's approval status (admin only).
-app.put(
-  "/service-providers/:id/approval",
-  requireRole("admin"),
-  (req, res) => {
-    const { approval_status, approval_notes, rejection_reason } = req.body;
-    const valid = [
-      "pending",
-      "under_review",
-      "approved",
-      "rejected",
-      "suspended",
-    ];
-    if (!valid.includes(approval_status)) {
-      return res.status(400).json({ error: "Invalid approval_status" });
-    }
+app.put("/service-providers/:id/approval", requireRole("admin"), (req, res) => {
+  const { approval_status, approval_notes, rejection_reason } = req.body;
+  const valid = [
+    "pending",
+    "under_review",
+    "approved",
+    "rejected",
+    "suspended",
+  ];
+  if (!valid.includes(approval_status)) {
+    return res.status(400).json({ error: "Invalid approval_status" });
+  }
 
-    dbconn.query(
-      `UPDATE service_providers SET
+  dbconn.query(
+    `UPDATE service_providers SET
          approval_status = ?,
          approval_notes = ?,
          approved_by = ?,
@@ -545,28 +555,27 @@ app.put(
          rejected_at = CASE WHEN ? = 'rejected' THEN NOW() ELSE rejected_at END,
          rejection_reason = ?
        WHERE id = ?`,
-      [
-        approval_status,
-        approval_notes ?? null,
-        req.session.user.id,
-        approval_status,
-        approval_status,
-        rejection_reason ?? null,
-        req.params.id,
-      ],
-      (err, result) => {
-        if (err) {
-          console.error("Error updating approval:", err);
-          return res.status(500).json({ error: "Internal Server Error" });
-        }
-        if (result.affectedRows === 0) {
-          return res.status(404).json({ error: "Provider not found" });
-        }
-        res.json({ message: "Approval status updated", approval_status });
-      },
-    );
-  },
-);
+    [
+      approval_status,
+      approval_notes ?? null,
+      req.session.user.id,
+      approval_status,
+      approval_status,
+      rejection_reason ?? null,
+      req.params.id,
+    ],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating approval:", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Provider not found" });
+      }
+      res.json({ message: "Approval status updated", approval_status });
+    },
+  );
+});
 
 // Soft-delete a provider. Owner or admin only.
 app.delete("/service-providers/:id", requireAuth, (req, res) => {
@@ -575,7 +584,8 @@ app.delete("/service-providers/:id", requireAuth, (req, res) => {
     [req.params.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: "Internal Server Error" });
-      if (!rows[0]) return res.status(404).json({ error: "Provider not found" });
+      if (!rows[0])
+        return res.status(404).json({ error: "Provider not found" });
 
       const u = req.session.user;
       if (u.user_type !== "admin" && rows[0].user_id !== u.id) {
@@ -646,9 +656,15 @@ app.post("/services", requireRole("provider", "admin"), (req, res) => {
     duration_minutes,
   } = req.body;
 
-  if (!provider_id || !service_name || price == null || duration_minutes == null) {
+  if (
+    !provider_id ||
+    !service_name ||
+    price == null ||
+    duration_minutes == null
+  ) {
     return res.status(400).json({
-      error: "provider_id, service_name, price and duration_minutes are required",
+      error:
+        "provider_id, service_name, price and duration_minutes are required",
     });
   }
 
@@ -891,7 +907,13 @@ app.post("/bookings", requireRole("client", "admin"), (req, res) => {
     client_notes,
   } = req.body;
 
-  if (!client_id || !service_id || !service_date || !start_time || !service_location_address) {
+  if (
+    !client_id ||
+    !service_id ||
+    !service_date ||
+    !start_time ||
+    !service_location_address
+  ) {
     return res.status(400).json({
       error:
         "client_id, service_id, service_date, start_time and service_location_address are required",
@@ -1101,26 +1123,30 @@ app.post("/ratings", requireRole("client", "admin"), (req, res) => {
 });
 
 // Provider responds to a rating (provider/admin only).
-app.put("/ratings/:id/response", requireRole("provider", "admin"), (req, res) => {
-  const { provider_response } = req.body;
-  if (!provider_response) {
-    return res.status(400).json({ error: "provider_response is required" });
-  }
-  dbconn.query(
-    "UPDATE ratings SET provider_response = ?, provider_responded_at = NOW() WHERE id = ?",
-    [provider_response, req.params.id],
-    (err, result) => {
-      if (err) {
-        console.error("Error responding to rating:", err);
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Rating not found" });
-      }
-      res.json({ message: "Response saved" });
-    },
-  );
-});
+app.put(
+  "/ratings/:id/response",
+  requireRole("provider", "admin"),
+  (req, res) => {
+    const { provider_response } = req.body;
+    if (!provider_response) {
+      return res.status(400).json({ error: "provider_response is required" });
+    }
+    dbconn.query(
+      "UPDATE ratings SET provider_response = ?, provider_responded_at = NOW() WHERE id = ?",
+      [provider_response, req.params.id],
+      (err, result) => {
+        if (err) {
+          console.error("Error responding to rating:", err);
+          return res.status(500).json({ error: "Internal Server Error" });
+        }
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "Rating not found" });
+        }
+        res.json({ message: "Response saved" });
+      },
+    );
+  },
+);
 
 // ===========================================================================
 // PROVIDER AVAILABILITY SLOTS
@@ -1130,10 +1156,11 @@ app.put("/ratings/:id/response", requireRole("provider", "admin"), (req, res) =>
 app.get("/availability", (req, res) => {
   const { provider_id, only_available } = req.query;
   if (!provider_id) {
-    return res.status(400).json({ error: "provider_id query param is required" });
+    return res
+      .status(400)
+      .json({ error: "provider_id query param is required" });
   }
-  let sql =
-    "SELECT * FROM provider_availability_slots WHERE provider_id = ?";
+  let sql = "SELECT * FROM provider_availability_slots WHERE provider_id = ?";
   const params = [provider_id];
   if (only_available === "1" || only_available === "true") {
     sql += " AND is_available = TRUE";
@@ -1153,7 +1180,8 @@ app.post("/availability", requireRole("provider", "admin"), (req, res) => {
   const { provider_id, available_date, start_time, end_time } = req.body;
   if (!provider_id || !available_date || !start_time || !end_time) {
     return res.status(400).json({
-      error: "provider_id, available_date, start_time and end_time are required",
+      error:
+        "provider_id, available_date, start_time and end_time are required",
     });
   }
   dbconn.query(
@@ -1223,19 +1251,24 @@ app.put("/availability/:id", requireRole("provider", "admin"), (req, res) => {
 });
 
 // Delete a slot (provider/admin only).
-app.delete("/availability/:id", requireRole("provider", "admin"), (req, res) => {
-  dbconn.query(
-    "DELETE FROM provider_availability_slots WHERE id = ?",
-    [req.params.id],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: "Internal Server Error" });
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Slot not found" });
-      }
-      res.json({ message: "Slot deleted" });
-    },
-  );
-});
+app.delete(
+  "/availability/:id",
+  requireRole("provider", "admin"),
+  (req, res) => {
+    dbconn.query(
+      "DELETE FROM provider_availability_slots WHERE id = ?",
+      [req.params.id],
+      (err, result) => {
+        if (err)
+          return res.status(500).json({ error: "Internal Server Error" });
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "Slot not found" });
+        }
+        res.json({ message: "Slot deleted" });
+      },
+    );
+  },
+);
 
 // ===========================================================================
 // CLIENT FAVORITES / WISHLIST

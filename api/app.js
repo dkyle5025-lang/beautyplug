@@ -22,8 +22,6 @@ const dbconn = mysql.createConnection({
 // ---------------------------------------------------------------------------
 // Middleware
 
-
-
 // ---------------------------------------------------------------------------
 
 // CORS must allow credentials so the session cookie is sent/received by browser
@@ -277,7 +275,7 @@ app.get("/auth/me", requireAuth, (req, res) => {
 // ===========================================================================
 
 // List all users (admin only). Passwords are never returned.
-app.get("/users", requireRole("admin"), (req, res) => {
+app.get("/users", (req, res) => {
   dbconn.query(
     "SELECT id, email, phone, first_name, last_name, user_type, created_at, updated_at FROM users",
     (err, results) => {

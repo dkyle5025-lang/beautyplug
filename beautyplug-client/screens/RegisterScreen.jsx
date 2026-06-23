@@ -8,7 +8,7 @@ import {
   ScrollView,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from "react-native";
 
 export default function RegisterScreen({ navigation }) {

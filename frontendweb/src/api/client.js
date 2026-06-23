@@ -8,7 +8,8 @@
 //   2. http://localhost:3000 (default for local development)
 
 export const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  "https://beautyapi.kipchirchir.co.ke";
 
 // Error thrown for any non-2xx response. Carries the HTTP status and the
 // server's JSON `error` message when present so the UI can show it directly.
@@ -50,8 +51,7 @@ async function request(path, { method = "GET", body, headers } = {}) {
   const data = text ? safeParse(text) : null;
 
   if (!res.ok) {
-    const message =
-      (data && data.error) || `Request failed (${res.status})`;
+    const message = (data && data.error) || `Request failed (${res.status})`;
     throw new ApiError(message, res.status, data);
   }
 

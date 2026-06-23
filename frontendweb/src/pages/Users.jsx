@@ -96,7 +96,9 @@ function Users() {
         </div>
 
         {error ? (
-          <Alert type="error" onClose={() => setError("")}>{error}</Alert>
+          <Alert type="error" onClose={() => setError("")}>
+            {error}
+          </Alert>
         ) : null}
 
         {loading ? (
@@ -130,94 +132,6 @@ function Users() {
                     <dt>Phone</dt>
                     <dd>{user.phone}</dd>
                   </div>
-                </dl>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="muted-text">No users found.</p>
-        )}
-      </section>
-
-      {editingUser ? (
-        <div className="modal-overlay" role="presentation" onClick={closeEditModal}>
-          <div
-            className="modal-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-user-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div>
-                <p className="eyebrow">Edit user</p>
-                <h2 id="edit-user-title">
-                  {editingUser.first_name} {editingUser.last_name}
-                </h2>
-              </div>
-              <button className="icon-button" type="button" onClick={closeEditModal}>
-                Close
-              </button>
-            </div>
-
-            <form className="stacked-form" onSubmit={handleUpdate}>
-              <div className="form-grid two-col">
-                <label>
-                  <span>First name</span>
-                  <input
-                    type="text"
-                    value={editFirstName}
-                    onChange={(e) => setEditFirstName(e.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  <span>Last name</span>
-                  <input
-                    type="text"
-                    value={editLastName}
-                    onChange={(e) => setEditLastName(e.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  <span>Phone</span>
-                  <input
-                    type="text"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="form-actions">
-                <button className="primary-button" type="submit" disabled={saving}>
-                  {saving ? "Updating..." : "Save changes"}
-                </button>
-                <button className="ghost-button" type="button" onClick={closeEditModal}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
-    </main>
-  );
-}
-
-export default Users;
-
                 </dl>
               </article>
             ))}
@@ -293,17 +207,6 @@ export default Users;
                     onChange={(e) => setEditPhone(e.target.value)}
                     required
                   />
-                </label>
-                <label className="full-width">
-                  <span>User type</span>
-                  <select
-                    value={editUserType}
-                    onChange={(e) => setEditUserType(e.target.value)}
-                  >
-                    <option value="client">Client</option>
-                    <option value="provider">Provider</option>
-                    <option value="admin">Admin</option>
-                  </select>
                 </label>
               </div>
 

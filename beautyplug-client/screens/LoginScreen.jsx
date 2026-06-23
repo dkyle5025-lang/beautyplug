@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { API_BASE, resolveClientId } from "../api";
 
 export default function LoginScreen({ navigation, onLoginSuccess }) {
   const [email, setEmail] = useState("");
@@ -32,7 +33,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }) {
     try {
       // 2. Fire request to your live Express backend endpoint
       const response = await fetch(
-        "https://beautyapi.kipchirchir.co.ke/auth/login",
+        `${API_BASE}/auth/login`,
         {
           method: "POST",
           headers: {
@@ -51,8 +52,10 @@ export default function LoginScreen({ navigation, onLoginSuccess }) {
       const data = await response.json();
 
       if (response.ok) {
-        // 3. Trigger state shift in App.js to unlock protected routes instantly
-        onLoginSuccess();
+        // 3. Resolve the client-profile id (needed for bookings) then trigger
+        //    the state shift in App.js to unlock protected routes.
+        const clientId = await resolveClientId(data.user);
+        onLoginSuccess(data.user, clientId);
       } else {
         // Handle explicit backend errors (e.g., "Invalid credentials")
         Alert.alert(

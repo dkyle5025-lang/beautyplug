@@ -55,17 +55,9 @@ export default function Navbar() {
         ) : null}
 
         {isAdmin ? (
-          <>
-            <NavLink to="/admin/users" onClick={close}>
-              Users
-            </NavLink>
-            <NavLink to="/admin/providers" onClick={close}>
-              Approvals
-            </NavLink>
-            <NavLink to="/admin/bookings" onClick={close}>
-              Bookings
-            </NavLink>
-          </>
+          <NavLink to="/users" onClick={close}>
+            Users
+          </NavLink>
         ) : null}
 
         {isAuthed ? (

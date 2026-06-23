@@ -7,6 +7,8 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 
 export default function RegisterScreen({ navigation }) {
@@ -46,12 +48,15 @@ export default function RegisterScreen({ navigation }) {
     try {
       console.log("Sending payload to API:", apiPayload);
 
-    // Example endpoint submission:
-      const response = await fetch('https://beautyapi.kipchirchir.co.ke/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiPayload),
-      });
+      // Example endpoint submission:
+      const response = await fetch(
+        "https://beautyapi.kipchirchir.co.ke/auth/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(apiPayload),
+        },
+      );
 
       Alert.alert("Success", "Account created successfully!");
       navigation.navigate("Login");
@@ -61,71 +66,82 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join beauty plug today</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join beauty plug today</Text>
 
-      {/* Input Fields */}
-      <View style={styles.form}>
-        <Text style={styles.label}>First Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Jane"
-          value={formData.first_name}
-          onChangeText={(val) => handleChange("first_name", val)}
-        />
+        {/* Input Fields */}
+        <View style={styles.form}>
+          <Text style={styles.label}>First Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Jane"
+            value={formData.first_name}
+            onChangeText={(val) => handleChange("first_name", val)}
+          />
 
-        <Text style={styles.label}>Last Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Doe"
-          value={formData.last_name}
-          onChangeText={(val) => handleChange("last_name", val)}
-        />
+          <Text style={styles.label}>Last Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Doe"
+            value={formData.last_name}
+            onChangeText={(val) => handleChange("last_name", val)}
+          />
 
-        <Text style={styles.label}>Email Address</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="jane@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={formData.email}
-          onChangeText={(val) => handleChange("email", val)}
-        />
+          <Text style={styles.label}>Email Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="jane@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={formData.email}
+            onChangeText={(val) => handleChange("email", val)}
+          />
 
-        <Text style={styles.label}>Phone Number</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="+254700000000"
-          keyboardType="phone-pad"
-          value={formData.phone}
-          onChangeText={(val) => handleChange("phone", val)}
-        />
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="+254700000000"
+            keyboardType="phone-pad"
+            value={formData.phone}
+            onChangeText={(val) => handleChange("phone", val)}
+          />
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          secureTextEntry
-          value={formData.password}
-          onChangeText={(val) => handleChange("password", val)}
-        />
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••"
+            secureTextEntry
+            value={formData.password}
+            onChangeText={(val) => handleChange("password", val)}
+          />
 
-        {/* Register Action Button */}
-        <Pressable style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+          {/* Register Action Button */}
+          <Pressable style={styles.button} onPress={handleRegister}>
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
+    flex: 1,
     backgroundColor: "#fff",
+  },
+  scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
+    padding: 24,
   },
   title: { fontSize: 26, fontWeight: "bold", color: "#333" },
   subtitle: { fontSize: 14, color: "#666", marginBottom: 24, marginTop: 4 },

@@ -80,7 +80,7 @@ export default function Register() {
             className={isProvider ? "role-option active" : "role-option"}
             onClick={() => setForm((f) => ({ ...f, user_type: "provider" }))}
           >
-            I'm a provider
+            I'm a service provider
           </button>
         </div>
 

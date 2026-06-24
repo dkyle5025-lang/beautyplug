@@ -14,7 +14,7 @@ app.set("trust proxy", 1);
 const dbconn = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "tendamema",
+  password: "23612498kyle",
   database: "beautyplug",
   port: 3306,
 });

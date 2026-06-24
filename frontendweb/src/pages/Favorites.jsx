@@ -42,7 +42,7 @@ export default function Favorites() {
         <section className="panel">
           <h1>Favorites</h1>
           <Alert type="info">
-            Add your client profile id on your{" "}
+            Activate your client profile on your{" "}
             <Link to="/profile">profile page</Link> to use favorites.
           </Alert>
         </section>

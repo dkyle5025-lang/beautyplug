@@ -8,8 +8,15 @@ import { useAuth } from "../context/AuthContext.jsx";
 import Alert from "../components/Alert.jsx";
 
 export default function Profile() {
-  const { user, setUser, isClient, isProvider, profileId, setClientProfileId } =
-    useAuth();
+  const {
+    user,
+    setUser,
+    isClient,
+    isProvider,
+    profileId,
+    setClientProfileId,
+    refreshProfileId,
+  } = useAuth();
 
   const [account, setAccount] = useState({
     first_name: user.first_name || "",
@@ -91,12 +98,23 @@ export default function Profile() {
     }
   }
 
+  // Saving the profile is what establishes the client id: resolve it first
+  // (the API has no user→client lookup), then persist the optional bio/picture.
   async function saveClientProfile(e) {
     e.preventDefault();
     setSavingClient(true);
     setClientMsg({ type: "", text: "" });
     try {
-      await clientApi.update(profileId, clientProfile);
+      let id = profileId;
+      if (!id) id = await refreshProfileId();
+      if (!id) {
+        setClientMsg({
+          type: "error",
+          text: "We couldn't find your client profile. Enter its id manually below, then save.",
+        });
+        return;
+      }
+      await clientApi.update(id, clientProfile);
       setClientMsg({ type: "success", text: "Profile saved." });
     } catch (err) {
       setClientMsg({ type: "error", text: err.message });
@@ -172,95 +190,95 @@ export default function Profile() {
       ) : null}
 
       {isClient ? (
-        <>
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <p className="eyebrow">Client profile</p>
-                <h2>Link your client id</h2>
-              </div>
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <p className="eyebrow">Client profile</p>
+              <h2>Your profile</h2>
             </div>
-            <p className="section-copy">
-              Bookings, favorites and reviews are tied to your client profile id
-              (<code>clients.id</code>). Enter it once to enable those features.
-              If you don't know it, ask an admin.
-            </p>
-            {linkMsg.text ? (
-              <Alert type={linkMsg.type} onClose={() => setLinkMsg({ type: "", text: "" })}>
-                {linkMsg.text}
-              </Alert>
-            ) : null}
-            <form className="stacked-form" onSubmit={linkClient}>
-              <div className="form-grid two-col">
-                <label>
-                  <span>Client profile id</span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={clientIdInput}
-                    onChange={(e) => setClientIdInput(e.target.value)}
-                    placeholder="e.g. 1"
-                    required
-                  />
-                </label>
-              </div>
-              <div className="form-actions">
-                <button className="primary-button" type="submit" disabled={linking}>
-                  {linking ? "Verifying…" : profileId ? "Update link" : "Link profile"}
-                </button>
-                {profileId ? (
-                  <span className="muted-text">Currently linked: #{profileId}</span>
-                ) : null}
-              </div>
-            </form>
-          </section>
+            {profileId ? (
+              <span className="status-pill active">Active · #{profileId}</span>
+            ) : (
+              <span className="status-pill pending">Setup required</span>
+            )}
+          </div>
+          <p className="section-copy">
+            Add a profile picture or a short bio — both optional. Saving your
+            profile activates your client account so you can book, favorite and
+            review.
+          </p>
+          {clientMsg.text ? (
+            <Alert type={clientMsg.type} onClose={() => setClientMsg({ type: "", text: "" })}>
+              {clientMsg.text}
+            </Alert>
+          ) : null}
+          <form className="stacked-form" onSubmit={saveClientProfile}>
+            <label>
+              <span>Profile picture URL (optional)</span>
+              <input
+                value={clientProfile.profile_picture_url}
+                onChange={(e) =>
+                  setClientProfile((p) => ({
+                    ...p,
+                    profile_picture_url: e.target.value,
+                  }))
+                }
+                placeholder="https://…"
+              />
+            </label>
+            <label>
+              <span>Bio (optional)</span>
+              <textarea
+                rows={3}
+                value={clientProfile.bio}
+                onChange={(e) =>
+                  setClientProfile((p) => ({ ...p, bio: e.target.value }))
+                }
+                placeholder="Tell providers a little about yourself"
+              />
+            </label>
+            <div className="form-actions">
+              <button className="primary-button" type="submit" disabled={savingClient}>
+                {savingClient
+                  ? "Saving…"
+                  : profileId
+                    ? "Save profile"
+                    : "Save & activate profile"}
+              </button>
+            </div>
+          </form>
 
-          {profileId ? (
-            <section className="panel">
-              <div className="panel-header">
-                <div>
-                  <p className="eyebrow">Client profile</p>
-                  <h2>Bio &amp; photo</h2>
-                </div>
-              </div>
-              {clientMsg.text ? (
-                <Alert type={clientMsg.type} onClose={() => setClientMsg({ type: "", text: "" })}>
-                  {clientMsg.text}
+          {!profileId ? (
+            <details className="manual-link">
+              <summary>Profile not found? Enter your client id manually</summary>
+              {linkMsg.text ? (
+                <Alert type={linkMsg.type} onClose={() => setLinkMsg({ type: "", text: "" })}>
+                  {linkMsg.text}
                 </Alert>
               ) : null}
-              <form className="stacked-form" onSubmit={saveClientProfile}>
-                <label>
-                  <span>Profile picture URL</span>
-                  <input
-                    value={clientProfile.profile_picture_url}
-                    onChange={(e) =>
-                      setClientProfile((p) => ({
-                        ...p,
-                        profile_picture_url: e.target.value,
-                      }))
-                    }
-                    placeholder="https://…"
-                  />
-                </label>
-                <label>
-                  <span>Bio</span>
-                  <textarea
-                    rows={3}
-                    value={clientProfile.bio}
-                    onChange={(e) =>
-                      setClientProfile((p) => ({ ...p, bio: e.target.value }))
-                    }
-                  />
-                </label>
+              <form className="stacked-form" onSubmit={linkClient}>
+                <div className="form-grid two-col">
+                  <label>
+                    <span>Client profile id</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={clientIdInput}
+                      onChange={(e) => setClientIdInput(e.target.value)}
+                      placeholder="e.g. 1"
+                      required
+                    />
+                  </label>
+                </div>
                 <div className="form-actions">
-                  <button className="primary-button" type="submit" disabled={savingClient}>
-                    {savingClient ? "Saving…" : "Save profile"}
+                  <button className="primary-button" type="submit" disabled={linking}>
+                    {linking ? "Verifying…" : "Link profile"}
                   </button>
                 </div>
               </form>
-            </section>
+            </details>
           ) : null}
-        </>
+        </section>
       ) : null}
     </main>
   );

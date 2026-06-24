@@ -60,7 +60,7 @@ export default function BookingModal({ provider, service, onClose, onBooked }) {
         <Alert type="info">Only client accounts can place bookings.</Alert>
       ) : !profileId ? (
         <Alert type="info">
-          We need your client profile id before booking. Add it on your{" "}
+          Activate your client profile before booking. Set it up on your{" "}
           <Link to="/profile">profile page</Link>, then come back.
         </Alert>
       ) : (

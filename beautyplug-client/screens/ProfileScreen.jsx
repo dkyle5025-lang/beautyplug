@@ -19,7 +19,6 @@ export default function ProfileScreen({ user, clientId, setClientId, onLogout })
   const [pictureUrl, setPictureUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [resolving, setResolving] = useState(false);
   const [resolvedId, setResolvedId] = useState(clientId);
 
   const load = useCallback(
@@ -46,35 +45,27 @@ export default function ProfileScreen({ user, clientId, setClientId, onLogout })
     load(clientId);
   }, [clientId, load]);
 
-  // Retry resolving the client profile id (used when login couldn't find it).
-  const retryResolve = async () => {
-    setResolving(true);
-    try {
-      const id = await resolveClientId(user);
-      if (id) {
-        setResolvedId(id);
-        setClientId?.(id);
-        setLoading(true);
-        await load(id);
-      } else {
-        Alert.alert(
-          "Profile not found",
-          "We couldn't locate your client profile on the server.",
-        );
-      }
-    } finally {
-      setResolving(false);
-    }
-  };
-
+  // Saving the profile is what establishes the client id: resolve it first
+  // (the API has no user→client lookup), then persist the optional bio/picture.
   const handleSave = async () => {
-    if (!resolvedId) {
-      retryResolve();
-      return;
-    }
     setSaving(true);
     try {
-      await apiFetch(`/clients/${resolvedId}`, {
+      let id = resolvedId;
+      if (!id) {
+        id = await resolveClientId(user);
+        if (id) {
+          setResolvedId(id);
+          setClientId?.(id);
+        }
+      }
+      if (!id) {
+        Alert.alert(
+          "Profile not found",
+          "We couldn't locate your client profile on the server. Please try again.",
+        );
+        return;
+      }
+      await apiFetch(`/clients/${id}`, {
         method: "PUT",
         body: JSON.stringify({
           bio: bio.trim(),
@@ -128,13 +119,13 @@ export default function ProfileScreen({ user, clientId, setClientId, onLogout })
           />
         </View>
 
-        {/* Profile not resolved */}
+        {/* Profile not activated yet */}
         {!resolvedId ? (
           <View style={styles.banner}>
             <Ionicons name="information-circle" size={20} color="#1565c0" />
             <Text style={styles.bannerText}>
-              We couldn't load your client profile id, which is needed for
-              booking. Tap below to set it up.
+              Add a photo or bio (both optional) and save to activate your
+              profile — that's what unlocks booking.
             </Text>
           </View>
         ) : null}
@@ -145,7 +136,7 @@ export default function ProfileScreen({ user, clientId, setClientId, onLogout })
           <ActivityIndicator color="#d81b60" style={{ marginVertical: 20 }} />
         ) : (
           <View>
-            <Text style={styles.label}>Bio</Text>
+            <Text style={styles.label}>Bio (optional)</Text>
             <TextInput
               style={[styles.input, styles.multiline]}
               value={bio}
@@ -153,10 +144,9 @@ export default function ProfileScreen({ user, clientId, setClientId, onLogout })
               placeholder="Tell providers a little about yourself"
               placeholderTextColor="#999"
               multiline
-              editable={!!resolvedId}
             />
 
-            <Text style={styles.label}>Profile picture URL</Text>
+            <Text style={styles.label}>Profile picture URL (optional)</Text>
             <TextInput
               style={styles.input}
               value={pictureUrl}
@@ -164,17 +154,16 @@ export default function ProfileScreen({ user, clientId, setClientId, onLogout })
               placeholder="https://…/me.jpg"
               placeholderTextColor="#999"
               autoCapitalize="none"
-              editable={!!resolvedId}
             />
 
-            {saving || resolving ? (
+            {saving ? (
               <View style={[styles.saveButton, styles.disabled]}>
                 <ActivityIndicator color="#fff" />
               </View>
             ) : (
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                 <Text style={styles.saveButtonText}>
-                  {resolvedId ? "Save profile" : "Set up profile"}
+                  {resolvedId ? "Save profile" : "Save & activate profile"}
                 </Text>
               </TouchableOpacity>
             )}

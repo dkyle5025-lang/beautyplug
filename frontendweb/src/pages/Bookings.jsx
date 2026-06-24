@@ -65,7 +65,7 @@ export default function Bookings() {
         <section className="panel">
           <h1>My bookings</h1>
           <Alert type="info">
-            We need your client profile id to load your bookings. Add it on your{" "}
+            Activate your client profile to view your bookings — head to your{" "}
             <Link to="/profile">profile page</Link>.
           </Alert>
         </section>
